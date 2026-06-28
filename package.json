@@ -1,0 +1,49 @@
+{
+  "name": "paperclip-plugin-google-chat",
+  "version": "0.1.0",
+  "description": "Bidirectional Google Chat integration for Paperclip — post agent/issue notifications to spaces and drive Paperclip from Chat slash commands.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Measured Assets",
+  "homepage": "https://github.com/measured-assets/paperclip-plugin-google-chat",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/measured-assets/paperclip-plugin-google-chat.git"
+  },
+  "keywords": [
+    "paperclip",
+    "paperclip-plugin",
+    "google-chat",
+    "google-workspace",
+    "chatops",
+    "agents"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "paperclipPlugin": {
+    "manifest": "./dist/manifest.js",
+    "worker": "./dist/worker.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "@paperclipai/plugin-sdk": ">=2026.626.0"
+  },
+  "devDependencies": {
+    "@paperclipai/plugin-sdk": "^2026.626.0",
+    "@types/node": "^22.19.21",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}
