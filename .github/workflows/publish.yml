@@ -23,6 +23,11 @@ jobs:
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
+      # OIDC trusted-publishing AUTH (not just provenance) needs npm >= 11.5.1;
+      # the Node 20 runner ships npm 10.x, which signs provenance but PUTs the
+      # package unauthenticated -> registry 404. Upgrade before publishing.
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
       - name: Install
         run: npm install
       - name: Typecheck
