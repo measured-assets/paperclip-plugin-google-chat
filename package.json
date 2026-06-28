@@ -19,8 +19,13 @@
     "agents"
   ],
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "paperclipPlugin": {
     "manifest": "./dist/manifest.js",
     "worker": "./dist/worker.js"
@@ -30,12 +35,17 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepack": "npm run build"
   },
   "peerDependencies": {
     "@paperclipai/plugin-sdk": ">=2026.626.0"
