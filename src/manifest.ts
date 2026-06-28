@@ -1,12 +1,15 @@
+import type { PaperclipPluginManifestV1 } from "@paperclipai/plugin-sdk";
 import { INSTANCE_CONFIG_SCHEMA } from "./config.js";
 import { JOB_KEYS, PLUGIN_ID, PLUGIN_VERSION, TOOL_NAMES, WEBHOOK_KEYS } from "./constants.js";
 
 /**
  * Paperclip plugin manifest (apiVersion 1). Declares the capability grants the
  * host enforces and the surfaces the worker registers. Keep capabilities minimal —
- * the host blocks any API call whose capability is not declared here.
+ * the host blocks any API call whose capability is not declared here. The
+ * PaperclipPluginManifestV1 annotation makes tsc validate field names against the
+ * host schema (e.g. jobs[].jobKey), so manifest drift fails the build, not install.
  */
-const manifest = {
+const manifest: PaperclipPluginManifestV1 = {
   id: PLUGIN_ID,
   apiVersion: 1,
   version: PLUGIN_VERSION,
@@ -58,7 +61,7 @@ const manifest = {
   ],
   jobs: [
     {
-      key: JOB_KEYS.dailyDigest,
+      jobKey: JOB_KEYS.dailyDigest,
       displayName: "Daily digest",
       description: "Posts a once-daily summary to the digest space when digestMode is enabled.",
       // Hourly tick; the handler self-gates to the configured HH:MM.
@@ -109,6 +112,6 @@ const manifest = {
       },
     },
   ],
-} as const;
+};
 
 export default manifest;
