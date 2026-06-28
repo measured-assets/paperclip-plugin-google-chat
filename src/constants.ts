@@ -5,7 +5,7 @@
  */
 
 export const PLUGIN_ID = "google-chat";
-export const PLUGIN_VERSION = "0.1.2";
+export const PLUGIN_VERSION = "0.1.3";
 
 /** Webhook endpoint keys declared in the manifest and matched in `onWebhook`. */
 export const WEBHOOK_KEYS = {

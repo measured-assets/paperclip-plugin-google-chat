@@ -31,7 +31,21 @@ async function getConfig(ctx: Ctx): Promise<GoogleChatConfig> {
   return { ...DEFAULT_CONFIG, ...raw };
 }
 
-/** Pick the secret ref for a route, falling back to the default webhook. */
+/** Raw webhook URL for a route, falling back to the default. */
+function rawUrlForRoute(config: GoogleChatConfig, route: RouteKey): string | undefined {
+  switch (route) {
+    case "approvals":
+      return config.approvalsWebhookUrl ?? config.defaultWebhookUrl;
+    case "errors":
+      return config.errorsWebhookUrl ?? config.defaultWebhookUrl;
+    case "digest":
+      return config.digestWebhookUrl ?? config.defaultWebhookUrl;
+    default:
+      return config.defaultWebhookUrl;
+  }
+}
+
+/** Secret ref for a route, falling back to the default. */
 function refForRoute(config: GoogleChatConfig, route: RouteKey): string | undefined {
   switch (route) {
     case "approvals":
@@ -45,19 +59,40 @@ function refForRoute(config: GoogleChatConfig, route: RouteKey): string | undefi
   }
 }
 
-/** Resolve a route's webhook URL (from a secret ref) and POST a message. */
+/**
+ * Resolve a route's webhook URL — preferring a raw URL (works on every host),
+ * falling back to a secret ref (only where the host enables plugin secret-ref
+ * resolution; some builds disable it). Returns null if neither yields a URL.
+ */
+async function resolveWebhookUrl(ctx: Ctx, config: GoogleChatConfig, route: RouteKey): Promise<string | null> {
+  const raw = rawUrlForRoute(config, route);
+  if (raw) return raw;
+  const ref = refForRoute(config, route);
+  if (!ref) return null;
+  try {
+    return await ctx.secrets.resolve(ref);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    ctx.logger?.warn?.(
+      `Could not resolve secret ref for route "${route}" (${msg}). ` +
+        `If your Paperclip build disables plugin secret references, set the raw "${route}WebhookUrl" field instead.`,
+    );
+    return null;
+  }
+}
+
+/** Resolve a route's webhook URL and POST a message. */
 async function post(
   ctx: Ctx,
   route: RouteKey,
   message: GoogleChatMessage,
 ): Promise<{ ok: boolean; status: number; body: string }> {
   const config = await getConfig(ctx);
-  const ref = refForRoute(config, route);
-  if (!ref) {
-    ctx.logger?.warn?.(`No webhook secret ref configured for route "${route}"`);
+  const url = await resolveWebhookUrl(ctx, config, route);
+  if (!url) {
+    ctx.logger?.warn?.(`No webhook URL available for route "${route}"`);
     return { ok: false, status: 0, body: `no webhook configured for route ${route}` };
   }
-  const url = await ctx.secrets.resolve(ref);
   return postToWebhook((u, init) => ctx.http.fetch(u, init), url, message);
 }
 
@@ -133,10 +168,10 @@ const plugin = definePlugin({
   async onHealth() {
     const ctx = currentCtx;
     const config = ctx ? await getConfig(ctx) : DEFAULT_CONFIG;
-    const configured = Boolean(config.defaultWebhookUrlRef);
+    const configured = Boolean(config.defaultWebhookUrl || config.defaultWebhookUrlRef);
     return {
       status: configured ? "ok" : "degraded",
-      message: configured ? "google-chat plugin ready" : "no defaultWebhookUrlRef configured",
+      message: configured ? "google-chat plugin ready" : "no default webhook URL or secret ref configured",
       details: { commandsEnabled: config.enableCommands !== false, digestMode: config.digestMode === true },
     };
   },
