@@ -26,12 +26,22 @@ describe("validateConfig", () => {
 });
 
 describe("mapEventToNotification", () => {
-  it("routes approvals to the approvals space", () => {
+  it("routes approval.created to the approvals space", () => {
     const n = mapEventToNotification(
-      { type: "approval.requested", data: { title: "X" } },
+      { type: "approval.created", data: { title: "X" } },
       { ...DEFAULT_CONFIG, notifyOnApprovalRequested: true },
     );
     expect(n?.routeKey).toBe("approvals");
+  });
+
+  it("notifies completion only on issue.updated to a terminal status", () => {
+    const cfg = { ...DEFAULT_CONFIG, notifyOnIssueCompleted: true };
+    // Non-terminal update → no notification.
+    expect(mapEventToNotification({ type: "issue.updated", data: { title: "X", status: "in_progress" } }, cfg)).toBeNull();
+    // Terminal update → completion notification on the default route.
+    const done = mapEventToNotification({ type: "issue.updated", data: { title: "X", status: "done" } }, cfg);
+    expect(done?.routeKey).toBe("default");
+    expect(done?.text).toContain("✅");
   });
 
   it("routes agent failures to the errors space", () => {

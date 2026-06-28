@@ -8,7 +8,7 @@
  */
 
 import type { GoogleChatConfig } from "./config.js";
-import { DOMAIN_EVENTS } from "./constants.js";
+import { DOMAIN_EVENTS, TERMINAL_ISSUE_STATUSES } from "./constants.js";
 import {
   formatAgentRunFailed,
   formatApprovalRequested,
@@ -52,11 +52,16 @@ export function mapEventToNotification(
       if (!config.notifyOnIssueCreated) return null;
       return { routeKey: "default", text: formatIssueCreated(asIssue(event.data)) };
 
-    case DOMAIN_EVENTS.issueCompleted:
+    case DOMAIN_EVENTS.issueUpdated: {
+      // The host has no `issue.completed`; completion surfaces as an update to a
+      // terminal status. Only notify on that transition, not every edit.
       if (!config.notifyOnIssueCompleted) return null;
-      return { routeKey: "default", text: formatIssueCompleted(asIssue(event.data)) };
+      const issue = asIssue(event.data);
+      if (!issue.status || !TERMINAL_ISSUE_STATUSES.has(issue.status.toLowerCase())) return null;
+      return { routeKey: "default", text: formatIssueCompleted(issue) };
+    }
 
-    case DOMAIN_EVENTS.approvalRequested:
+    case DOMAIN_EVENTS.approvalCreated:
       if (!config.notifyOnApprovalRequested) return null;
       return { routeKey: "approvals", text: formatApprovalRequested(asIssue(event.data)) };
 

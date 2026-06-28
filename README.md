@@ -73,6 +73,23 @@ src/
 
 Pure logic (formatting, parsing, routing, validation) is separated from the SDK-facing worker so it is unit-tested without a running Paperclip (`tests/`).
 
+## Adapter compatibility (important)
+
+The plugin's **worker-side** features work with **any** adapter, because they run in the
+plugin worker, not the agent:
+
+- ✅ **Event notifications** (`events.subscribe` → Chat)
+- ✅ **Inbound slash commands** (`webhooks.receive`)
+- ✅ **Daily digest job** (`jobs.schedule`)
+
+The **agent tools** (`post_to_google_chat`, `escalate_to_human`, `send_briefing`) are only
+callable by adapters whose tool calls are routed **through Paperclip's tool dispatcher**. They
+are **not available to `claude_local` / `codex_local` "process" adapters**, which run the CLI
+(e.g. `claude -p`) as a black-box subprocess — Paperclip captures stdout but never sees the
+agent's individual tool calls, so plugin tools can't be surfaced to them. For a CLI-based
+fleet, drive Chat via the event/webhook features above, or give the agent its own posting
+mechanism (an MCP server, or a direct webhook `curl`).
+
 ## Develop
 
 ```bash
